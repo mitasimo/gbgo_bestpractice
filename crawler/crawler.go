@@ -63,7 +63,7 @@ func (c *crawler) run(ctx context.Context, url string, results chan<- crawlResul
 			return
 		}
 
-		page, err := parse(url)
+		page, err := parse(ctx, url)
 		if err != nil {
 			// ошибку отправляем в канал, а не обрабатываем на месте
 			results <- crawlResult{
@@ -72,8 +72,8 @@ func (c *crawler) run(ctx context.Context, url string, results chan<- crawlResul
 			return
 		}
 
-		title := pageTitle(page)
-		links := pageLinks(nil, page)
+		title := pageTitle(ctx, page)
+		links := pageLinks(ctx, nil, page)
 
 		// блокировка требуется, т.к. мы модифицируем мапку в несколько горутин
 		c.Lock()

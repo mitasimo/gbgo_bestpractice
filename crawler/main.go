@@ -24,6 +24,9 @@ var (
 
 	// насколько глубоко нам надо смотреть (например, 10)
 	depthLimit int
+
+	// общий таймаут в секундах
+	timeout int
 )
 
 // Как вы помните, функция инициализации стартует первой
@@ -31,6 +34,7 @@ func init() {
 	// задаём и парсим флаги
 	flag.StringVar(&url, "url", "", "url address")
 	flag.IntVar(&depthLimit, "depth", 3, "max depth for run")
+	flag.IntVar(&timeout, "timeout", 30, "total timeout")
 	flag.Parse()
 
 	// Проверяем обязательное условие
@@ -44,7 +48,7 @@ func init() {
 func main() {
 	started := time.Now()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeout))
 	go watchSignals(cancel)
 	defer cancel()
 
