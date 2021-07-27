@@ -11,21 +11,18 @@ import (
 // парсим страницу
 func parse(ctx context.Context, url string) (*html.Node, error) {
 	// что здесь должно быть вместо http.Get? :)
-	select {
-	case <-ctx.Done():
-		return nil, nil
+	//r, err := http.Get(url)
+	// ... вот чем!
+	r, err := httpGetWithContext(ctx, url)
 
-	default:
-		r, err := http.Get(url)
-		if err != nil {
-			return nil, fmt.Errorf("can't get page")
-		}
-		b, err := html.Parse(r.Body)
-		if err != nil {
-			return nil, fmt.Errorf("can't parse page")
-		}
-		return b, err
+	if err != nil {
+		return nil, fmt.Errorf("can't get page")
 	}
+	b, err := html.Parse(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("can't parse page")
+	}
+	return b, err
 }
 
 // ищем заголовок на странице
@@ -75,4 +72,13 @@ func pageLinks(ctx context.Context, links map[string]struct{}, n *html.Node) map
 		}
 		return links
 	}
+}
+
+func httpGetWithContext(ctx context.Context, url string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return http.DefaultClient.Do(req)
 }
