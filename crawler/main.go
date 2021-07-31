@@ -24,6 +24,9 @@ var (
 
 	// насколько глубоко нам надо смотреть (например, 10)
 	depthLimit int
+
+	// общий таймаут в секундах
+	timeout int
 )
 
 // Как вы помните, функция инициализации стартует первой
@@ -31,6 +34,7 @@ func init() {
 	// задаём и парсим флаги
 	flag.StringVar(&url, "url", "", "url address")
 	flag.IntVar(&depthLimit, "depth", 3, "max depth for run")
+	flag.IntVar(&timeout, "timeout", 30, "total timeout")
 	flag.Parse()
 
 	// Проверяем обязательное условие
@@ -44,11 +48,14 @@ func init() {
 func main() {
 	started := time.Now()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeout))
 	go watchSignals(cancel)
 	defer cancel()
 
 	crawler := newCrawler(depthLimit)
+
+	// lesson 1
+	go watchDepth(ctx, crawler, 2)
 
 	// создаём канал для результатов
 	results := make(chan crawlResult)
@@ -66,9 +73,24 @@ func main() {
 	log.Println(time.Since(started))
 }
 
+// lesson 1
+func watchDepth(ctx context.Context, c *crawler, d int) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGUSR1)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-sigChan:
+			log.Println("got signal SIGUSR1")
+			c.IncDepth(d)
+		}
+	}
+}
+
 // ловим сигналы выключения
 func watchSignals(cancel context.CancelFunc) {
-	osSignalChan := make(chan os.Signal)
+	osSignalChan := make(chan os.Signal, 1) // go-staticheck рекумендует буферизованный канал
 
 	signal.Notify(osSignalChan,
 		syscall.SIGINT,

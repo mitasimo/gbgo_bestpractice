@@ -16,8 +16,9 @@ type crawlResult struct {
 
 type crawler struct {
 	sync.Mutex
-	visited  map[string]string
-	maxDepth int
+	visited   map[string]string
+	maxDepth  int
+	depthLock sync.RWMutex // блокировка для maxDepth
 }
 
 func newCrawler(maxDepth int) *crawler {
@@ -25,6 +26,21 @@ func newCrawler(maxDepth int) *crawler {
 		visited:  make(map[string]string),
 		maxDepth: maxDepth,
 	}
+}
+
+// lesson1
+func (c *crawler) chechDepth(depth int) (r bool) {
+	c.depthLock.RLock()
+	r = depth <= c.maxDepth
+	c.depthLock.RUnlock()
+	return
+}
+
+// lesson1
+func (c *crawler) IncDepth(d int) {
+	c.depthLock.Lock()
+	c.maxDepth += d
+	c.depthLock.Unlock()
 }
 
 // рекурсивно сканируем страницы
@@ -39,11 +55,15 @@ func (c *crawler) run(ctx context.Context, url string, results chan<- crawlResul
 
 	default:
 		// проверка глубины
-		if depth >= c.maxDepth {
+		//if depth >= c.maxDepth {
+		//	return
+		//}
+		// lesson 1
+		if !c.chechDepth(depth) {
 			return
 		}
 
-		page, err := parse(url)
+		page, err := parse(ctx, url)
 		if err != nil {
 			// ошибку отправляем в канал, а не обрабатываем на месте
 			results <- crawlResult{
@@ -52,8 +72,8 @@ func (c *crawler) run(ctx context.Context, url string, results chan<- crawlResul
 			return
 		}
 
-		title := pageTitle(page)
-		links := pageLinks(nil, page)
+		title := pageTitle(ctx, page)
+		links := pageLinks(ctx, nil, page)
 
 		// блокировка требуется, т.к. мы модифицируем мапку в несколько горутин
 		c.Lock()
