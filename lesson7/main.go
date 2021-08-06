@@ -17,6 +17,7 @@ import (
 )
 
 func main() {
+	loadConfig()
 
 	// connect to db
 	db, err := sql.Open("postgres", dbConnectSting())
@@ -40,8 +41,12 @@ func main() {
 	// process os signals
 	go func() {
 		<-sigs
-		server.Shutdown(context.Background())
-
+		//Error return value of `server.Shutdown` is not checked (errcheck)
+		//        server.Shutdown(context.Background())
+		err := server.Shutdown(context.Background())
+		if err != nil {
+			os.Exit(-1)
+		}
 	}()
 
 	log.Println("Service started...")
@@ -96,5 +101,4 @@ func (svc *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, "Rows affected: %d", ra)
 	w.WriteHeader(http.StatusOK)
-
 }

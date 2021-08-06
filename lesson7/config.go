@@ -14,8 +14,10 @@ var (
 	svcPort, svcUser, svcPassword    string
 )
 
-func init() {
+// don't use `init` function (gochecknoinits)
+//func init() {
 
+func loadConfig() {
 	// load DBMS params
 	pgHost = os.Getenv("PG_HOST")
 	pgDB = os.Getenv("PG_DB")
@@ -26,7 +28,6 @@ func init() {
 	svcPort = os.Getenv("SVC_PORT")
 	svcUser = os.Getenv("SVC_USER")
 	svcPassword = os.Getenv("SVC_PASSWORD")
-
 }
 
 func dbConnectSting() string {
