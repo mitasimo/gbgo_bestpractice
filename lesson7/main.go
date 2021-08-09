@@ -49,9 +49,13 @@ func main() {
 		}
 	}()
 
-	log.Println("Service started...")
-	log.Println(server.ListenAndServe()) // start server
-	log.Println("Service stoped...")
+	log.Println("service started...")
+	err = server.ListenAndServe() // start server
+	if err != nil {
+		log.Println("service stopped with error: ", err)
+	} else {
+		log.Println("service stoped")
+	}
 }
 
 // Service -

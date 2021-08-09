@@ -16,7 +16,6 @@ var (
 
 // don't use `init` function (gochecknoinits)
 //func init() {
-
 func loadConfig() {
 	// load DBMS params
 	pgHost = os.Getenv("PG_HOST")
